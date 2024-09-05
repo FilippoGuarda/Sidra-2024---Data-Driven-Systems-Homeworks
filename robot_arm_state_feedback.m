@@ -1,21 +1,16 @@
-%% NUMERICAL EXAMPLE ON CONTRACTIVITY
-%  system: one-link robot arm
-%  REMARKS
-%  In this example we pick Q(x)=cox(x1) or Q(x)=[cox(x1) x1^2 sin(x2)]'
 
-%% Initialization
+% Initialization
 clear,clc
 rng(1);
 
-%% System parameters
+% System parameters
 global K
 global A
 global B
-
 n = 4; % system dimensions
 m = 1;
 T = 12; % number of samples
-% system parameters
+
 A = [0 1 0 0; ... % precomputed A matrix
     -2 -0.75 1 0; ...
     0 0 0 1; ...
@@ -31,7 +26,7 @@ Tsim = T*Ts; % duration of simulation
 mag = 0.1; % magnitude of initial conditions
 x0  = (2*mag).*rand(n,1)-mag; % initial state
 
-sim('data_collection_arm');
+sim('robot_arm');
 
 x  = state.signals.values'; 
 xd = state_deriv.signals.values'; 
@@ -43,8 +38,7 @@ X1  = xd(:,1:T);
 
 s = 5; % dimension of Z(x)
 Z0  = [X0;cos(X0(1,:))];
-RQ = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0]; % Bound for Jacobian of Q(x)
-
+RQ = [1 0 0 0; 0 0 0 0; 0 0 0 0; 0 0 0 0]; 
 rank([U0; Z0]) % full row rank check
 
 r = n; % column number of RQ
@@ -63,30 +57,36 @@ cvx_begin sdp
     Z0*G2 == [zeros(n,s-n);eye(s-n)];
 cvx_end
 
-G1 = Y1/P1;
-G  = [G1 G2];
+G  = [Y1/P1 G2];
 K  = U0*G; 
 closed = X1*G;
 
-mx0 = 1;   % magnitude of initial conditions
-x0  = (2*mx0).*rand(n,1)-mx0;
-tspan = [0,100];  % duration of simulation
+mag = 1;
+x0  = (2*mag).*rand(n,1)-mag;
+tspan = [0,100]; 
 
-[t,x] = ode45(@arm,tspan,x0);
+[t,x_cl] = ode45(@arm,tspan,x0);
 
-x_star = x(end,:)';
+x_star = x_cl(end,:)';
 u_star = K*[x_star;cos(x_star(1))]; % equlibrium point of closed-loop system
 
-figure
-plot(t,x(:,1),'r','LineWidth',1);
-hold on;
-plot(t,x(:,2),'b','LineWidth',1);
-hold on;
-plot(t,x(:,3),'g','LineWidth',1);
-hold on;
-plot(t,x(:,4),'k','LineWidth',1);
-xlabel('t');
-legend('x(1) ','x(2)','x(3) ','x(4)');
+subplot(2,1,1);
+plot(0:T, x); 
+title('System sampling');
+xlabel('Time step');
+ylabel('State');
+legend('x1', 'x2', 'x3', 'x4');
+grid on;
+
+subplot(2,1,2);
+plot(t, x_cl);
+title('Output feedback states');
+xlabel('Time step');
+ylabel('State');
+legend('x1', 'x2', 'x3', 'x4');
+grid on;
+
+
 
 function dxdt = arm(t,x)  
     global K
@@ -100,16 +100,4 @@ function dxdt = arm(t,x)
     
 end
 
-% % Simulate closed-loop system
-% x_cl = zeros(n, T+1);
-% U1 = zeros(1, T);
-% x_cl(:,1) = x(:,1); % Use the same initial condition
-% u_ctl = zeros(n, T+1);
-% Y = zeros(1, T);
-% Xi = zeros(2*n, 2*n);
-% for k = 1:T
-%     x_cl(:, k+1) = A*x_cl(:, k) + B*K_cal*Xi(:, k);
-%     Xi(:, k+1) = L_cal*C*x_cl(:, k) + (F_cal+B_cal*K_cal)*Xi(:, k);
-%     Y(:, k) = C*x_cl(:, k);
-%     U1(:, k) = K_cal*Xi(:, k);
-% end
+

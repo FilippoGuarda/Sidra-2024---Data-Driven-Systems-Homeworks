@@ -134,11 +134,13 @@ x_cl(:,1) = x(:,1); % Use the same initial condition
 u_ctl = zeros(n, T+1);
 Y = zeros(1, T);
 Xi = zeros(2*n, 2*n);
+Xe = [0 0 100 0]'; 
 for k = 1:T
     x_cl(:, k+1) = A*x_cl(:, k) + B*K_cal*Xi(:, k);
-    Xi(:, k+1) = L_cal*C*x_cl(:, k) + (F_cal+B_cal*K_cal)*Xi(:, k);
+    Xi(:, k+1) = L_cal*C*(x_cl(:, k) - Xe) + (F_cal+B_cal*K_cal)*Xi(:, k);
     Y(:, k) = C*x_cl(:, k);
     U1(:, k) = K_cal*Xi(:, k);
+    U1(:, k) = max(min(U1(:, k), 1), -1);
 end
 
 
