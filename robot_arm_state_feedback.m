@@ -48,12 +48,12 @@ cvx_begin sdp
     variable Y1(T,n)
     variable G2(T,s-n)
     variable a 
-    P1 >= 0*eye(n);
-    a >= 0;
+    P1 >= 0*eye(n) - eye(n);
+    a >= 0 - eye(1);
     Z0*Y1 == [P1;zeros(s-n,n)];
-    [X1*Y1+transpose(X1*Y1)+a*eye(n) X1*G2 P1*RQ;
-        transpose(X1*G2) -eye(s-n) zeros(s-n,r);
-        transpose(P1*RQ) zeros(r,s-n) -eye(r)] <= 0;
+    [X1*Y1+(X1*Y1)'+a*eye(n) X1*G2 P1*RQ;
+        (X1*G2)' -eye(s-n) zeros(s-n,r);
+        (P1*RQ)' zeros(r,s-n) -eye(r)] <= 0;
     Z0*G2 == [zeros(n,s-n);eye(s-n)];
 cvx_end
 

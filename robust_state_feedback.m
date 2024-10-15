@@ -46,19 +46,30 @@ if rank([U0 ; X0]) == m+n
 disp('data are sufficiently rich');
 end
 
-% Check if DD' < I*delta
-if D0*D0' <= eye(n)*d_max^2
-disp('delta bounded');
-end
-Theta = diag([0 0 1 0]);
 
-% Solving the non-robust state feedback controller
+% Check if DD' < I*delta
+Delta = eye(4);
+if eig(D0*D0' - Delta) <= 0
+disp('delta bounded');
+else
+disp('delta unbounded');
+return 
+end
+
+% Solving the robust state feedback controller
 cvx_begin sdp
 
     variable Y(T,n)
     variable S(n,n) symmetric
+    variable epsi
 
-    [S-eye(n) ((X1-D0)*Y); ((X1-D0)*Y)' S] >= 0;
+    epsi >= 0 - eye(1);   
+
+    [S-eye(n) (X1*Y)' Y';
+    (X1*Y) S-eps*Delta zeros(n,T);
+    Y zeros(T,n) epsi*eye(T)] <= 0;
+
+    % [S-eye(n) ((X1-)*Y); ((X1- )*Y)' S] >= 0;
     S == X0*Y;
     
 cvx_end
@@ -77,11 +88,12 @@ x_cl = zeros(n, T+1);
 U1 = zeros(m, T);
 x_cl(:,1) = x(:,1); % Use the same initial condition
 u_ctl = zeros(n, T+1);
+
 for k = 1:T
     % d = d_max * (2*rand(n,1) - 1); % New random disturbance
     d = 0;
     % subtract equilibrium from state to get nonzero equilibria
-    u_cl = 0 + K*(x_cl(:,k) - [0 0 10 0]');
+    u_cl = 0 + K*(x_cl(:,k) - [0 0 1 0]');
     u_cl = max(min(u_cl, 1), -1); % Saturate control input
     U1(:, k) = u_cl;
     x_cl(:,k+1) = A*x_cl(:,k) + B*u_cl + d;
@@ -124,6 +136,6 @@ grid on;
 
 
 % Analyze closed-loop eigenvalues
-cl_eig = eig(A - B*K);
+cl_eig = eig(A + B*K);
 disp('Closed-loop eigenvalues:');
 disp(cl_eig);
