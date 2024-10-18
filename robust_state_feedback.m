@@ -63,9 +63,9 @@ cvx_begin sdp
     variable S(n,n) symmetric
     variable epsi
 
-    epsi >= 0 - eye(1);   
+    epsi >= 0 + eye(1);   
 
-    [S-eye(n) (X1*Y)' Y';
+    [S+eye(n) (X1*Y)' Y';
     (X1*Y) S-eps*Delta zeros(n,T);
     Y zeros(T,n) epsi*eye(T)] <= 0;
 
